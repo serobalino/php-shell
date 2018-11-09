@@ -453,8 +453,8 @@ if ($_SESSION['authenticated']) {
 </head>
 
 <body onload="init()">
-<!-- AKI -->
-<h1>Servidor Difusas 1</h1>
+
+<h1>PHP Shell <?php echo PHPSHELL_VERSION ?></h1>
 
 <form name="shell" enctype="multipart/form-data" action="<?php print($_SERVER['PHP_SELF']) ?>" method="post">
 <div><input name="levelup" id="levelup" type="hidden"></div>
@@ -497,6 +497,45 @@ if (!$_SESSION['authenticated']) {
 <?php } else { /* Authenticated. */ ?>
 <fieldset>
   <legend><?php echo "Phpshell running on: " . $_SERVER['SERVER_NAME']; ?></legend>
+<p>Current Working Directory:
+<span class="pwd"><?php
+    if ( $showeditor ) {
+        echo htmlspecialchars($_SESSION['cwd'], ENT_COMPAT, 'UTF-8') . '</span>';
+    } else { /* normal mode - offer navigation via hyperlinks */
+        $parts = explode('/', $_SESSION['cwd']);
+     
+        for ($i=1; $i<count($parts); $i=$i+1) {
+            echo '<a class="pwd" title="Change to this directory. Your command will not be executed." href="javascript:levelup(' . (count($parts)-$i) . ')">/</a>' ;
+            echo htmlspecialchars($parts[$i], ENT_COMPAT, 'UTF-8');
+        }
+        echo '</span>';
+        if (is_readable($_SESSION['cwd'])) { /* is the current directory readable? */
+            /* Now we make a list of the directories. */
+            $dir_handle = opendir($_SESSION['cwd']);
+            /* We store the output so that we can sort it later: */
+            $options = array();
+            /* Run through all the files and directories to find the dirs. */
+            while ($dir = readdir($dir_handle)) {
+                if (($dir != '.') and ($dir != '..') and is_dir($_SESSION['cwd'] . "/" . $dir)) {
+                    $options[$dir] = "<option value=\"/$dir\">$dir</option>";
+                }
+            }
+            closedir($dir_handle);
+            if (count($options)>0) {
+                ksort($options);
+                echo '<br><a href="javascript:changesubdir()">Change to subdirectory</a>: <select name="dirselected">';
+                echo implode("\n", $options);
+                echo '</select>';
+            }
+        } else {
+            echo "[current directory not readable]";
+        }  
+    }
+?>
+<br>
+
+    <?php if (! $showeditor) { /* Outputs the 'terminal' without the editor */ ?>
+
 <div id="terminal">
 <textarea name="output" readonly="readonly" cols="<?php echo $columns ?>" rows="<?php echo $rows ?>">
 <?php
